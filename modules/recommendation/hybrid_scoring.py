@@ -1,6 +1,6 @@
 """
 하이브리드 추천 점수 계산 모듈
-log 스케일 가중치 적용 및 최종 점수 계산
+개발자 B 담당: log 스케일 가중치 적용 및 최종 점수 계산
 """
 import math
 from typing import Dict, List, Tuple, Optional
@@ -101,7 +101,7 @@ def calculate_batch_hybrid_scores(
     popularity_weight: float = 0.3
 ) -> List[Dict]:
     """
-    여러 책에 대한 하이브리드 점수 일괄 계산
+    여러 책에 대한 하이브리드 점수를 일괄 계산
     
     Args:
         books_data: {
@@ -182,3 +182,5 @@ def format_recommendation_response(
     
     return recommendations
 
+
+# 데모/샘플 코드는 tests/hybrid_scoring_demo.py 참고
