@@ -1,4 +1,4 @@
-# minimal_preprocess.py
+# reprocess.py
 import os, re
 import pandas as pd
 from konlpy.tag import Okt
