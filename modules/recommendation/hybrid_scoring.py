@@ -172,6 +172,9 @@ def format_recommendation_response(
             'id': book_id,
             'title': metadata.get('title', 'Unknown'),
             'author': metadata.get('author', 'Unknown'),
+            'description': metadata.get('description', ''),
+            # Android/DTO 호환 키
+            'score': round(score_data['hybrid_score'], 3),
             'content_score': round(score_data['content_score'], 3),
             'popularity_score': round(score_data['normalized_popularity'], 3),
             'hybrid_score': round(score_data['hybrid_score'], 3),

@@ -65,12 +65,16 @@ class BookRecommendationDTO:
         service.compute_recommendations() 결과(dict)를 DTO로 변환.
         이때 키 이름은 프로젝트에 맞추면 됨.
         """
+        # score가 없으면 hybrid_score를 대체로 사용해 하위 호환
+        score_val = data.get("score")
+        if score_val is None and "hybrid_score" in data:
+            score_val = data["hybrid_score"]
         return cls(
             id=str(data.get("id", "")),
             title=data.get("title", "") or "",
             author=data.get("author", "") or "",
             description=data.get("description", "") or "",
-            score=float(data.get("score", 0.0)),
+            score=float(score_val or 0.0),
             isbn=data.get("isbn"),
             imageUrl=data.get("imageUrl"),
             category=data.get("category"),
