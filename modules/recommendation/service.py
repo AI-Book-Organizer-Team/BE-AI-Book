@@ -15,7 +15,9 @@ def compute_recommendations(
     # 1) 사용자 평균 임베딩
     user_vecs = []
     for b in user_books:
-        text = f"{b['title']} by {b.get('author','')}: {b.get('description','')}"
+        text = b.get('content')
+        if not text:
+            text = f"{b.get('title','')} {b.get('author','')} {b.get('description','')}"
         user_vecs.append(embed_text(text))
     if not user_vecs:
         return []
@@ -26,7 +28,9 @@ def compute_recommendations(
     for book in catalog:
         if any(book['id'] == ub['id'] for ub in user_books):
             continue
-        text = f"{book['title']} by {book.get('author','')}: {book.get('description','')}"
+        text = book.get('content')
+        if not text:
+            text = f"{book.get('title','')} {book.get('author','')} {book.get('description','')}"
         vec = embed_text(text)
         sim = cosine(avg_vec, vec)
         content_scores[book['id']] = (sim + 1) / 2  # [-1,1] → [0,1]
