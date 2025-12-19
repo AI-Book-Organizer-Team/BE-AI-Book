@@ -53,29 +53,46 @@ def attach_tokenized_content(books: List[Dict]) -> None:
 # ============================================================
 
 def fetch_catalog_books() -> List[Dict]:
-    """
-    Books 컬렉션 전체를 가져와서 카탈로그 리스트로 반환.
+    """Books 컬렉션(글로벌) + 필요시 users/*/books 컬렉션 그룹을 사용해
+    추천에 사용할 카탈로그 리스트를 반환한다.
 
-    ⚠ 전제 (추측입니다):
-    - 컬렉션 이름: "Books"
-    - 필드:
-        isbn, title, author, publisher,
-        publishDate, category, description,
-        imageUrl, pageCount, popularity_count(선택)
+    1순위: Books 컬렉션 (BookFirebaseService가 저장하는 전역 테이블)
+    2순위: users/*/books collection group (과거/기타 경로에만 존재하는 도서를 위해)
     """
     catalog: List[Dict] = []
 
-    books_col = db.collection("Books")  # <- 실제 컬렉션 이름 확인 후 수정
-
+    # 1) 전역 Books 컬렉션에서 카탈로그 조회
+    books_col = db.collection("Books")
     docs = books_col.stream()
     for doc in docs:
         data = doc.to_dict() or {}
-
-        # 여기서 'id'는 추천 알고리즘에서 사용하는 식별자
-        # isbn을 그대로 id로 사용 (중복되지 않는다고 가정)
         book = {
-            "id": data.get("isbn") or doc.id,  # isbn이 비어있으면 문서 id 사용
+            "id": data.get("isbn") or doc.id,
             "isbn": data.get("isbn", ""),
+            "title": data.get("title", ""),
+            "author": data.get("author", ""),
+            "publisher": data.get("publisher", ""),
+            "publishDate": data.get("publishDate", ""),
+            "category": data.get("category", ""),
+            "description": data.get("description", ""),
+            "imageUrl": data.get("imageUrl", ""),
+            "pageCount": data.get("pageCount", 0),
+            "popularity_count": data.get("popularity_count", 0),
+        }
+        catalog.append(book)
+
+    if catalog:
+        return catalog
+
+    # 2) Books 컬렉션이 비어있을 경우, users/*/books collection group에서 카탈로그 구성
+    cg = db.collection_group("books")
+    docs = cg.stream()
+    for doc in docs:
+        data = doc.to_dict() or {}
+        isbn = data.get("isbn") or doc.id
+        book = {
+            "id": isbn,
+            "isbn": isbn,
             "title": data.get("title", ""),
             "author": data.get("author", ""),
             "publisher": data.get("publisher", ""),
@@ -109,23 +126,34 @@ def build_catalog_index_by_isbn(catalog: List[Dict]) -> Dict[str, Dict]:
 # ============================================================
 
 def fetch_user_saved_isbns(user_id: str) -> List[str]:
-    """
-    사용자가 저장한 책의 isbn 목록만 Firestore에서 가져온다.
+    """사용자가 저장한 책의 isbn 목록만 Firestore에서 가져온다.
 
-    ⚠ 전제 (추측입니다):
-    - 컬렉션 구조:
-        users/{user_id}/savedBooks/{doc_id}
-        각 문서 필드: { isbn: "XXXXXXXXXX" }
+    현재 FE-AI-Book 구조 기준(실제 앱 동작):
+    - 사용자 책장: users/{userId}/books 서브컬렉션
+      (Book 객체 전체가 그대로 저장되어 있고, 그 안에 isbn 필드 포함)
+
+    따라서 1순위로 users/{userId}/books 를 조회해서 isbn 리스트를 만들고,
+    필요하다면 2순위로 UserBooks 컬렉션을 참고해 과거 데이터도 함께 본다.
     """
     isbns: List[str] = []
 
-    # 실제 구조: users, savedBooks 이름은 프로젝트에 맞게 수정
-    saved_col = db.collection("users").document(user_id).collection("savedBooks")
-    docs = saved_col.stream()
+    # 1) 현재 구조: users/{userId}/books 에서 isbn 수집
+    books_col = db.collection("users").document(user_id).collection("books")
+    docs = books_col.stream()
     for doc in docs:
         data = doc.to_dict() or {}
         isbn = data.get("isbn")
         if isbn:
+            isbns.append(isbn)
+
+    # 2) (선택) UserBooks 컬렉션과도 호환하고 싶다면, 여기서 추가로 합쳐준다.
+    #    기존에 UserBooks에만 저장된 데이터가 있다면 그 isbn들도 포함.
+    extra_query = db.collection("UserBooks").where("userId", "==", user_id)
+    extra_docs = extra_query.stream()
+    for doc in extra_docs:
+        data = doc.to_dict() or {}
+        isbn = data.get("isbn")
+        if isbn and isbn not in isbns:
             isbns.append(isbn)
 
     return isbns

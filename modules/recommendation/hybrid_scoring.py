@@ -173,6 +173,9 @@ def format_recommendation_response(
             'title': metadata.get('title', 'Unknown'),
             'author': metadata.get('author', 'Unknown'),
             'description': metadata.get('description', ''),
+            'isbn': metadata.get('isbn'),
+            'imageUrl': metadata.get('imageUrl'),
+            'category': metadata.get('category'),
             # Android/DTO 호환 키
             'score': round(score_data['hybrid_score'], 3),
             'content_score': round(score_data['content_score'], 3),

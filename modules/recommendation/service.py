@@ -52,12 +52,17 @@ def compute_recommendations(
         popularity_weight=popularity_weight,
     )
 
-    # 5) 응답 포맷
+    # 5) 응답 포맷에 사용할 메타데이터 구성
+    #    - title/author/description 뿐 아니라 isbn, imageUrl, category까지 담아서
+    #      최종 JSON 응답에 그대로 노출되도록 한다.
     metadata = {
         b['id']: {
             'title': b['title'],
             'author': b.get('author', ''),
             'description': b.get('description', ''),
+            'isbn': b.get('isbn'),
+            'imageUrl': b.get('imageUrl'),
+            'category': b.get('category'),
         } for b in catalog
     }
     return format_recommendation_response(hybrid, metadata, top_k=top_k)
