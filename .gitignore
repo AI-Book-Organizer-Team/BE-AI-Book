@@ -1,0 +1,11 @@
+# 비밀 키 / 환경파일
+.env
+dream-up-31460-firebase-adminsdk-fbsvc-b7a56fda89.json  
+*.pem
+*.p12
+# IDE
+.idea/
+
+# Python bytecode/cache/
+*.pyc
+
